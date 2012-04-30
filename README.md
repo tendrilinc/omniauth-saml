@@ -42,7 +42,8 @@ Rails.application.config.middleware.use OmniAuth::Builder do
     :idp_sso_target_url             => "idp_sso_target_url",
     :idp_cert                       => "-----BEGIN CERTIFICATE-----\n...-----END CERTIFICATE-----",
     :idp_cert_fingerprint           => "E7:91:B2:E1:...",
-    :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+    :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+	:use_post_binding				=> false
 end
 ```
 
@@ -71,6 +72,8 @@ end
   See http://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf section 8.3 for
   other options. Note that the identity provider might not support all options.
   Optional.
+
+* `:use_post_binding` - Whether or not the auth_request should be submitted via POST rather than GET? Optional, default is false.
 
 ## Authors
 
