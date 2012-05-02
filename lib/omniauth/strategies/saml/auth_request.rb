@@ -20,8 +20,13 @@ module OmniAuth
             "<saml:AuthnContextClassRef xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></samlp:RequestedAuthnContext>\n" +
             "</samlp:AuthnRequest>"
 
-          deflated_request  = Zlib::Deflate.deflate(request, 9)[2..-5]
-          base64_request    = Base64.encode64(deflated_request)
+          if settings[:use_post_binding]
+            base64_request    = Base64.encode64(request)
+          else
+            deflated_request  = Zlib::Deflate.deflate(request, 9)[2..-5]
+            base64_request    = Base64.encode64(deflated_request)            
+          end
+
           encoded_request   = CGI.escape(base64_request)
           request_params    = "?SAMLRequest=" + encoded_request
 
