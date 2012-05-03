@@ -43,7 +43,8 @@ Rails.application.config.middleware.use OmniAuth::Builder do
     :idp_cert                       => "-----BEGIN CERTIFICATE-----\n...-----END CERTIFICATE-----",
     :idp_cert_fingerprint           => "E7:91:B2:E1:...",
     :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
-	:use_post_binding				=> false
+    :use_post_binding               => false,
+    :authn_context_class_ref        => "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
 end
 ```
 
@@ -73,7 +74,12 @@ end
   other options. Note that the identity provider might not support all options.
   Optional.
 
-* `:use_post_binding` - Whether or not the auth_request should be submitted via POST rather than GET? Optional, default is false.
+* `:use_post_binding` - Whether or not the auth_request should be submitted via POST rather than GET? Optional, default
+  is false.
+
+* `:authn_context_class_ref` - Request authentication with a specific authentication context class.  Optional.
+  Default is "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport".  Set to nil or empty to completely
+  remove AuthnContextClassRef node from auth request.
 
 ## Authors
 
