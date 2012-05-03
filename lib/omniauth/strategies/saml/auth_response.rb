@@ -19,7 +19,8 @@ module OmniAuth
         end
 
         def valid?
-          validate(soft = true)
+          #validate(soft = true)
+          validate!
         end
 
         def validate!
