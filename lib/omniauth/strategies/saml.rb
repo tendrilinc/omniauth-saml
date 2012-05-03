@@ -11,6 +11,7 @@ module OmniAuth
 
       option :name_identifier_format, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
       option :use_post_binding, false
+      option :requested_authn_context, false
       option :authn_context_class_ref, "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
 
       def request_phase

@@ -21,7 +21,10 @@ use OmniAuth::Strategies::SAML,
   :idp_sso_target_url             => "idp_sso_target_url",
   :idp_cert                       => "-----BEGIN CERTIFICATE-----\n...-----END CERTIFICATE-----",
   :idp_cert_fingerprint           => "E7:91:B2:E1:...",
-  :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+  :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+  :use_post_binding               => false,
+  :requested_authn_context        => false,
+  :authn_context_class_ref        => "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
 ```
 
 or in your Rails application:
@@ -44,6 +47,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
     :idp_cert_fingerprint           => "E7:91:B2:E1:...",
     :name_identifier_format         => "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
     :use_post_binding               => false,
+    :requested_authn_context        => false,
     :authn_context_class_ref        => "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
 end
 ```
@@ -77,9 +81,16 @@ end
 * `:use_post_binding` - Whether or not the auth_request should be submitted via POST rather than GET? Optional, default
   is false.
 
+* `:requested_authn_context` - Should the RequestAuthnContext element be included in the request.  Optional, default is
+  false. To increase the chance of interoperability this should be set to false. The support for different
+  authentication context classes, and the semantics around them may be interpreted differently and may potentially
+  cause interoperability problems. If set to true, the participating entities should have a already established
+  agreement upon which authentication context classes are available. The authentication context class reference can then
+  be set via the `:authn_context_class_ref` option.
+
 * `:authn_context_class_ref` - Request authentication with a specific authentication context class.  Optional.
   Default is "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport".  Set to nil or empty to completely
-  remove AuthnContextClassRef node from auth request.
+  remove AuthnContextClassRef element from auth request.  Only used when `:requested_authn_context` is true.
 
 ## Authors
 
