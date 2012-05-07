@@ -55,7 +55,7 @@ module OmniAuth
             fingerprint = Digest::SHA1.hexdigest(cert.to_der)
 
             if fingerprint != idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/,"").downcase
-              Rails.logger.error "[SAML] Fingerprint Mismatch"
+              SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
 
@@ -90,7 +90,7 @@ module OmniAuth
               digest_value                  = REXML::XPath.first(ref, "//ds:DigestValue", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"}).text
 
               if hash != digest_value
-                Rails.logger.error "[SAML] Digest Mismatch."
+                SAML::log :error, "Digest Mismatch."
                 return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Digest mismatch"))
               end
             end
@@ -108,7 +108,7 @@ module OmniAuth
             cert                    = OpenSSL::X509::Certificate.new(cert_text)
 
             if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
-              Rails.logger.error "[SAML] Key Validation Error."
+              SAML::log :error, "Key Validation Error."
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
             end
 

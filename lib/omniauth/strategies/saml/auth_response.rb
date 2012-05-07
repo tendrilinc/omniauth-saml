@@ -81,17 +81,17 @@ module OmniAuth
 
         def validate_response_state(soft = true)
           if response.empty?
-            Rails.logger.error "[SAML] Blank response."
+            SAML::log :error, "Blank response."
             return soft ? false : validation_error("Blank response")
           end
 
           if settings.nil?
-            Rails.logger.error "[SAML] No settings on response."
+            SAML::log :error, "No settings on response."
             return soft ? false : validation_error("No settings on response")
           end
 
           if settings.idp_cert_fingerprint.nil? && settings.idp_cert.nil?
-            Rails.logger.error "[SAML] No fingerprint or certificate on settings."
+            SAML::log :error, "No fingerprint or certificate on settings."
             return soft ? false : validation_error("No fingerprint or certificate on settings")
           end
 
@@ -113,14 +113,14 @@ module OmniAuth
 
           if not_before = parse_time(conditions, "NotBefore")
             if Time.now.utc < not_before
-              Rails.logger.error "[SAML] Current time is earlier than NotBefore condition."
+              SAML::log :error, "Current time is earlier than NotBefore condition."
               return soft ? false : validation_error("Current time is earlier than NotBefore condition")
             end
           end
 
           if not_on_or_after = parse_time(conditions, "NotOnOrAfter")
             if Time.now.utc >= not_on_or_after
-              Rails.logger.error "[SAML] Current time is on or after NotOnOrAfter condition."
+              SAML::log :error, "Current time is on or after NotOnOrAfter condition."
               return soft ? false : validation_error("Current time is on or after NotOnOrAfter condition")
             end
           end

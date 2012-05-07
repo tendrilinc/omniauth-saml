@@ -71,10 +71,20 @@ module OmniAuth
 
       def fail!(message_key, exception = nil)
         if exception && exception.is_a?(ValidationError)
-          Rails.logger.error "[SAML] #{exception.message}"
-          Rails.logger.error "[SAML] SAMLResponse => #{exception.saml_response.inspect}"
+          log :error, exception.message
+          log :error, "SAMLResponse => #{exception.saml_response.inspect}"
         end
         super
+      end
+
+      # Direct access to the OmniAuth logger, automatically prefixed
+      # with this strategy's name.
+      #
+      # @example
+      #   log :warn, "This is a warning."
+      #   SAML::log :warn, "This is a warning."
+      def self.log(level, message)
+        OmniAuth.logger.send(level, "(saml) #{message}")
       end
 
     end
