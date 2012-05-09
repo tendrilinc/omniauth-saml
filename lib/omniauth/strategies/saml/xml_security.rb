@@ -26,7 +26,7 @@ require 'rubygems'
 require "rexml/document"
 require "rexml/xpath"
 require "openssl"
-require "xmlcanonicalizer"
+require "nokogiri"
 require "digest/sha1"
 
 module OmniAuth
@@ -37,21 +37,23 @@ module OmniAuth
 
         class SignedDocument < REXML::Document
           DSIG = "http://www.w3.org/2000/09/xmldsig#"
+          EC   = "http://www.w3.org/2001/10/xml-exc-c14n#"
 
           attr_accessor :signed_element_id
 
           def initialize(response)
             super(response)
+            @doc = Nokogiri::XML.parse(response)
             extract_signed_element_id
           end
 
           def validate(idp_cert_fingerprint, soft = true)
-            # get cert from response
+            # Get certificate from response
             base64_cert = self.elements["//ds:X509Certificate"].text
             cert_text   = Base64.decode64(base64_cert)
             cert        = OpenSSL::X509::Certificate.new(cert_text)
 
-            # check cert matches registered idp cert
+            # Check certificate matches registered IdP certificate
             fingerprint = Digest::SHA1.hexdigest(cert.to_der)
 
             if fingerprint != idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/,"").downcase
@@ -63,53 +65,42 @@ module OmniAuth
           end
 
           def validate_doc(base64_cert, soft = true)
-            # validate references
-
-            # check for inclusive namespaces
-
+            # Check for inclusive namespaces
             inclusive_namespaces            = []
-            inclusive_namespace_element     = REXML::XPath.first(self, "//ec:InclusiveNamespaces")
-
+            inclusive_namespace_element     = @doc.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
             if inclusive_namespace_element
-              prefix_list                   = inclusive_namespace_element.attributes.get_attribute('PrefixList').value
+              prefix_list                   = inclusive_namespace_element.attributes['PrefixList'].value
               inclusive_namespaces          = prefix_list.split(" ")
             end
 
-            # remove signature node
-            sig_element = REXML::XPath.first(self, "//ds:Signature", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"})
+            # Verify signature
+            signed_info_element     = @doc.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
+            canon_string            = signed_info_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+            base64_signature        = @doc.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
+            signature               = Base64.decode64(base64_signature)
+            cert_text               = Base64.decode64(base64_cert)
+            cert                    = OpenSSL::X509::Certificate.new(cert_text)
+            if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
+              SAML::log :error, "Key Validation Error."
+              return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
+            end
+
+            # Remove Signature Node (must be done after signature verification)
+            sig_element = @doc.at_xpath(".//ds:Signature", { "ds" => DSIG })
             sig_element.remove
 
-            # check digests
-            REXML::XPath.each(sig_element, "//ds:Reference", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"}) do |ref|
-              uri                           = ref.attributes.get_attribute("URI").value
-              hashed_element                = REXML::XPath.first(self, "//[@ID='#{uri[1,uri.size]}']")
-              canoner                       = XML::Util::XmlCanonicalizer.new(false, true)
-              canoner.inclusive_namespaces  = inclusive_namespaces if canoner.respond_to?(:inclusive_namespaces) && !inclusive_namespaces.empty?
-              canon_hashed_element          = canoner.canonicalize(hashed_element)
-              hash                          = Base64.encode64(Digest::SHA1.digest(canon_hashed_element)).chomp
-              digest_value                  = REXML::XPath.first(ref, "//ds:DigestValue", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"}).text
+            # Check Digests (must be done after sig_element removal)
+            sig_element.xpath(".//ds:Reference", { "ds" => DSIG }).each do |ref|
+              uri                     = ref.attributes["URI"].value
+              hashed_element          = @doc.at_xpath(".//*[@ID='#{uri[1..-1]}']")
+              canon_hashed_element    = hashed_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
+              hash                    = Base64.encode64(Digest::SHA1.digest(canon_hashed_element)).chomp
+              digest_value            = ref.at_xpath(".//ds:DigestValue", { "ds" => DSIG }).text
 
               if hash != digest_value
                 SAML::log :error, "Digest Mismatch."
                 return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Digest mismatch"))
               end
-            end
-
-            # verify signature
-            canoner                 = XML::Util::XmlCanonicalizer.new(false, true)
-            signed_info_element     = REXML::XPath.first(sig_element, "//ds:SignedInfo", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"})
-            canon_string            = canoner.canonicalize(signed_info_element)
-
-            base64_signature        = REXML::XPath.first(sig_element, "//ds:SignatureValue", {"ds"=>"http://www.w3.org/2000/09/xmldsig#"}).text
-            signature               = Base64.decode64(base64_signature)
-
-            # get certificate object
-            cert_text               = Base64.decode64(base64_cert)
-            cert                    = OpenSSL::X509::Certificate.new(cert_text)
-
-            if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
-              SAML::log :error, "Key Validation Error."
-              return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
             end
 
             return true
@@ -118,7 +109,7 @@ module OmniAuth
           private
 
           def extract_signed_element_id
-            reference_element       = REXML::XPath.first(self, "//ds:Signature/ds:SignedInfo/ds:Reference", {"ds"=>DSIG})
+            reference_element       = @doc.at_xpath("//ds:Signature/ds:SignedInfo/ds:Reference", { "ds" => DSIG })
             self.signed_element_id  = reference_element.attribute("URI").value unless reference_element.nil?
           end
         end
