@@ -28,11 +28,12 @@ describe OmniAuth::Strategies::SAML::AuthResponse do
 
   describe :attributes do
     it "should return all of the attributes as a hash" do
+
       subject.attributes.should == {
         :forename => 'Steven',
         :surname => 'Anderson',
         :address_1 => '24 Made Up Drive',
-        :address_2 => nil,
+        :address_2 => "",
         :companyName => 'Test Company Ltd',
         :postcode => 'XX2 4XX',
         :city => 'Newcastle',
@@ -45,7 +46,7 @@ describe OmniAuth::Strategies::SAML::AuthResponse do
         'forename' => 'Steven',
         'surname' => 'Anderson',
         'address_1' => '24 Made Up Drive',
-        'address_2' => nil,
+        'address_2' => "",
         'companyName' => 'Test Company Ltd',
         'postcode' => 'XX2 4XX',
         'city' => 'Newcastle',
@@ -74,9 +75,9 @@ describe OmniAuth::Strategies::SAML::AuthResponse do
 
   describe :conditions do
     it "should return the conditions element from the XML" do
-      subject.conditions.attributes['NotOnOrAfter'].should == '2012-03-08T16:30:01.336Z'
-      subject.conditions.attributes['NotBefore'].should    == '2012-03-08T16:20:01.336Z'
-      REXML::XPath.first(subject.conditions, '//saml:Audience').text.should include 'AUDIENCE'
+      subject.conditions.attributes['NotOnOrAfter'].to_s.should == '2012-03-08T16:30:01.336Z'
+      subject.conditions.attributes['NotBefore'].to_s.should    == '2012-03-08T16:20:01.336Z'
+      subject.conditions.at_xpath('.//saml:Audience', { "saml" => "urn:oasis:names:tc:SAML:2.0:assertion" }).text.should include 'AUDIENCE'
     end
   end
 

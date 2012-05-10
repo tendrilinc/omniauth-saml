@@ -15,7 +15,7 @@ module OmniAuth
           raise ArgumentError.new("Response cannot be nil") if response.nil?
           self.options  = options
           self.response = response
-          self.document = OmniAuth::Strategies::SAML::XMLSecurity::SignedDocument.new(Base64.decode64(response))
+          self.document = OmniAuth::Strategies::SAML::XMLSecurity::SignedDocument.parse(Base64.decode64(response))
         end
 
         def valid?
@@ -43,10 +43,10 @@ module OmniAuth
 
             {}.tap do |result|
               stmt_element.elements.each do |attr_element|
-                name  = attr_element.attributes["Name"]
+                name  = attr_element.attributes["Name"].to_s
                 value = strip(attr_element.elements.first.text)
 
-                result[name] = result[name.to_sym] =  value
+                result[name] = result[name.to_sym] = value
               end
             end
           end
@@ -140,7 +140,7 @@ module OmniAuth
         end
 
         def xpath(path)
-          REXML::XPath.first(document, path, { "p" => PROTOCOL, "a" => ASSERTION })
+          document.at_xpath(path, { "p" => PROTOCOL, "a" => ASSERTION })
         end
 
         def signed_element_id

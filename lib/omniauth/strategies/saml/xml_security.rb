@@ -23,8 +23,6 @@
 # Portions Copyrighted 2007 Todd W Saxton.
 
 require 'rubygems'
-require "rexml/document"
-require "rexml/xpath"
 require "openssl"
 require "nokogiri"
 require "digest/sha1"
@@ -35,21 +33,19 @@ module OmniAuth
 
       module XMLSecurity
 
-        class SignedDocument < REXML::Document
+        class SignedDocument < Nokogiri::XML::Document
           DSIG = "http://www.w3.org/2000/09/xmldsig#"
           EC   = "http://www.w3.org/2001/10/xml-exc-c14n#"
 
           attr_accessor :signed_element_id
 
-          def initialize(response)
-            super(response)
-            @doc = Nokogiri::XML.parse(response)
+          def initialize
             extract_signed_element_id
           end
 
           def validate(idp_cert_fingerprint, soft = true)
             # Get certificate from response
-            base64_cert = self.elements["//ds:X509Certificate"].text
+            base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
             cert_text   = Base64.decode64(base64_cert)
             cert        = OpenSSL::X509::Certificate.new(cert_text)
 
@@ -67,16 +63,16 @@ module OmniAuth
           def validate_doc(base64_cert, soft = true)
             # Check for inclusive namespaces
             inclusive_namespaces            = []
-            inclusive_namespace_element     = @doc.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
+            inclusive_namespace_element     = self.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
             if inclusive_namespace_element
               prefix_list                   = inclusive_namespace_element.attributes['PrefixList'].value
               inclusive_namespaces          = prefix_list.split(" ")
             end
 
             # Verify signature
-            signed_info_element     = @doc.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
+            signed_info_element     = self.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
             canon_string            = signed_info_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
-            base64_signature        = @doc.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
+            base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
             cert_text               = Base64.decode64(base64_cert)
             cert                    = OpenSSL::X509::Certificate.new(cert_text)
@@ -86,13 +82,13 @@ module OmniAuth
             end
 
             # Remove Signature Node (must be done after signature verification)
-            sig_element = @doc.at_xpath(".//ds:Signature", { "ds" => DSIG })
+            sig_element = self.at_xpath(".//ds:Signature", { "ds" => DSIG })
             sig_element.remove
 
             # Check Digests (must be done after sig_element removal)
             sig_element.xpath(".//ds:Reference", { "ds" => DSIG }).each do |ref|
               uri                     = ref.attributes["URI"].value
-              hashed_element          = @doc.at_xpath(".//*[@ID='#{uri[1..-1]}']")
+              hashed_element          = self.at_xpath(".//*[@ID='#{uri[1..-1]}']")
               canon_hashed_element    = hashed_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
               hash                    = Base64.encode64(Digest::SHA1.digest(canon_hashed_element)).chomp
               digest_value            = ref.at_xpath(".//ds:DigestValue", { "ds" => DSIG }).text
@@ -109,7 +105,7 @@ module OmniAuth
           private
 
           def extract_signed_element_id
-            reference_element       = @doc.at_xpath("//ds:Signature/ds:SignedInfo/ds:Reference", { "ds" => DSIG })
+            reference_element       = self.at_xpath("//ds:Signature/ds:SignedInfo/ds:Reference", { "ds" => DSIG })
             self.signed_element_id  = reference_element.attribute("URI").value unless reference_element.nil?
           end
         end

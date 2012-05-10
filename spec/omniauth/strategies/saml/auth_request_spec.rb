@@ -39,8 +39,8 @@ describe OmniAuth::Strategies::SAML::AuthRequest do
         Zlib::Inflate.new(-Zlib::MAX_WBITS).inflate(base64_decoded)
       end
 
-      let(:xml) { REXML::Document.new(decoded) }
-      let(:root_element) { REXML::XPath.first(xml, '//samlp:AuthnRequest') }
+      let(:xml) { Nokogiri::XML::Document.parse(decoded) }
+      let(:root_element) { xml.at_xpath('.//samlp:AuthnRequest', { 'samlp' => 'urn:oasis:names:tc:SAML:2.0:protocol' }) }
 
       it "should contain base64 encoded and zlib deflated xml" do
         decoded.should match /^<samlp:AuthnRequest/
@@ -49,26 +49,26 @@ describe OmniAuth::Strategies::SAML::AuthRequest do
       it "should contain a uuid with an underscore in front" do
         UUID.any_instance.stub(:generate).and_return('MY_UUID')
 
-        root_element.attributes['ID'].should == '_MY_UUID'
+        root_element.attributes['ID'].to_s.should == '_MY_UUID'
       end
 
       it "should contain the current time as the IssueInstant" do
         t = Time.now
         Time.stub(:now).and_return(t)
 
-        root_element.attributes['IssueInstant'].should == t.utc.iso8601
+        root_element.attributes['IssueInstant'].to_s.should == t.utc.iso8601
       end
 
       it "should contain the callback url in the settings" do
-        root_element.attributes['AssertionConsumerServiceURL'].should == 'http://example.com/auth/saml/callback'
+        root_element.attributes['AssertionConsumerServiceURL'].to_s.should == 'http://example.com/auth/saml/callback'
       end
 
       it "should contain the issuer" do
-        REXML::XPath.first(xml, '//saml:Issuer').text.should == 'This is an issuer'
+        xml.at_xpath('.//saml:Issuer', { 'saml' => 'urn:oasis:names:tc:SAML:2.0:assertion' }).text.should == 'This is an issuer'
       end
 
       it "should contain the name identifier format" do
-        REXML::XPath.first(xml, '//samlp:NameIDPolicy').attributes['Format'].should == 'Some Policy'
+        xml.at_xpath('.//samlp:NameIDPolicy', { 'samlp' => 'urn:oasis:names:tc:SAML:2.0:protocol' }).attributes['Format'].to_s.should == 'Some Policy'
       end
     end
   end
