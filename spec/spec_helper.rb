@@ -17,6 +17,6 @@ def load_xml(filename=:example_response)
 end
 
 def load_xml_64(filename=:example_response)
-  filename = File.expand_path(File.join('..', 'support', "#{filename.to_s}.txt"), __FILE__)
+  filename = File.expand_path(File.join('..', 'support', "#{filename.to_s}_64.txt"), __FILE__)
   IO.read(filename)
 end

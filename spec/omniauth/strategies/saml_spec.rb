@@ -1,15 +1,5 @@
 require 'spec_helper'
 
-RSpec::Matchers.define :fail_with do |message|
-  match do |actual|
-    actual.redirect? && actual.location == "/auth/failure?message=#{message}&strategy=saml"
-  end
-end
-
-def post_xml(xml=:example_response)
-  post "/auth/saml/callback", {'SAMLResponse' => load_xml(xml)}
-end
-
 describe OmniAuth::Strategies::SAML, :type => :strategy do
   include OmniAuth::Test::StrategyTestCase
 
@@ -130,4 +120,21 @@ describe OmniAuth::Strategies::SAML, :type => :strategy do
       it { should fail_with(:invalid_ticket) }
     end
   end
+end
+
+RSpec::Matchers.define :fail_with do |message|
+  match do |actual|
+    actual.redirect? && actual.location == "/auth/failure?message=#{message}&strategy=saml"
+  end
+end
+
+def post_xml(xml=:example_response)
+  post "/auth/saml/callback", {'SAMLResponse' => load_xml(xml)}
+end
+
+# If you have trouble using post_xml method (failing specs), try this method instead which will use your Base64 encoded
+# response instead. Why? The SAML XML response, while more readable, can be easily changed when copying and pasting
+# between tools and can thus cause encoding differences and false failures.
+def post_xml_64(xml=:example_response)
+  post "/auth/saml/callback", {'SAMLResponse' => load_xml_64(xml)}
 end
