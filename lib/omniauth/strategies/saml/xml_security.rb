@@ -43,11 +43,17 @@ module OmniAuth
             extract_signed_element_id
           end
 
-          def validate(idp_cert_fingerprint, soft = true)
-            # Get certificate from response
-            base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
-            cert_text   = Base64.decode64(base64_cert)
-            cert        = OpenSSL::X509::Certificate.new(cert_text)
+          def validate(idp_cert_fingerprint, soft = true, idp_cert = nil, inclusive_namespaces_for_signed_info_canonicalization = nil)
+            if idp_cert
+              # Use certificate provided in settings
+              cert_text = idp_cert.gsub(/^ +/, '')
+              base64_cert = Base64.encode64(cert_text)
+            else
+              # Get certificate from response
+              base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
+              cert_text = Base64.decode64(base64_cert)
+            end
+            cert = OpenSSL::X509::Certificate.new(cert_text)
 
             # Check certificate matches registered IdP certificate
             fingerprint = Digest::SHA1.hexdigest(cert.to_der)
@@ -56,11 +62,10 @@ module OmniAuth
               SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
-
-            validate_doc(base64_cert, soft)
+            validate_doc(cert, soft, inclusive_namespaces_for_signed_info_canonicalization)
           end
 
-          def validate_doc(base64_cert, soft = true)
+          def validate_doc(cert, soft = true, inclusive_namespaces_for_signed_info_canonicalization = nil)
             # Check for inclusive namespaces
             inclusive_namespaces            = []
             inclusive_namespace_element     = self.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
@@ -71,11 +76,9 @@ module OmniAuth
 
             # Verify signature
             signed_info_element     = self.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
-            canon_string            = signed_info_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+            canon_string            = signed_info_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces_for_signed_info_canonicalization)
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
-            cert_text               = Base64.decode64(base64_cert)
-            cert                    = OpenSSL::X509::Certificate.new(cert_text)
             if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
               SAML::log :error, "Key Validation Error."
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
@@ -88,7 +91,11 @@ module OmniAuth
             # Check Digests (must be done after sig_element removal)
             sig_element.xpath(".//ds:Reference", { "ds" => DSIG }).each do |ref|
               uri                     = ref.attributes["URI"].value
-              hashed_element          = self.at_xpath(".//*[@ID='#{uri[1..-1]}']")
+              unless uri.nil? || uri.empty?
+                hashed_element = self.at_xpath(".//*[@ID='#{uri[1..-1]}']")
+              else
+                hashed_element = self.at_xpath(".//samlp:Response")
+              end
               canon_hashed_element    = hashed_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
               hash                    = Base64.encode64(Digest::SHA1.digest(canon_hashed_element)).chomp
               digest_value            = ref.at_xpath(".//ds:DigestValue", { "ds" => DSIG }).text
