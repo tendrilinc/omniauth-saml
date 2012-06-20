@@ -38,16 +38,9 @@ module OmniAuth
           EC   = "http://www.w3.org/2001/10/xml-exc-c14n#"
           CANONICALIZATION_METHODS =
           {
-            'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'       => Nokogiri::XML::XML_C14N_1_0,
-            'http://www.w3.org/TR/xml-c14n'                         => Nokogiri::XML::XML_C14N_1_0,
-            'http://www.w3.org/TR/2001/PR-xml-c14n-20010119'        => Nokogiri::XML::XML_C14N_1_0,
-            'http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/'  => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
-            'http://www.w3.org/TR/xml-exc-c14n/'                    => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
-            'http://www.w3.org/TR/2002/PR-xml-exc-c14n-20020524/'   => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
-            'http://www.w3.org/TR/2008/REC-xml-c14n11-20080502/'    => Nokogiri::XML::XML_C14N_1_1,
-            'http://www.w3.org/TR/xml-c14n11/'                      => Nokogiri::XML::XML_C14N_1_1,
-            'http://www.w3.org/TR/2008/PR-xml-c14n11-20080129/'     => Nokogiri::XML::XML_C14N_1_1,
-            'http://www.w3.org/2001/10/xml-exc-c14n#'               => Nokogiri::XML::XML_C14N_1_1
+            'http://www.w3.org/TR/2001/REC-xml-c14n-20010315' => Nokogiri::XML::XML_C14N_1_0,
+            'http://www.w3.org/2001/10/xml-exc-c14n#'         => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
+            'http://www.w3.org/2006/12/xml-c14n11'            => Nokogiri::XML::XML_C14N_1_1
           }
 
           attr_accessor :signed_element_id
@@ -90,7 +83,7 @@ module OmniAuth
             # Verify signature
             signed_info_element     = self.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
             canon_method_uri        = signed_info_element.at_xpath(".//ds:CanonicalizationMethod", { "ds" => DSIG }).attribute("Algorithm").value
-            canon_method            = CANONICALIZATION_METHODS[canon_method_uri]
+            canon_method            = CANONICALIZATION_METHODS[canon_method_uri] || XML_C14N_EXCLUSIVE_1_0
             canon_string            = signed_info_element.canonicalize( canon_method )
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
