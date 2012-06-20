@@ -77,7 +77,7 @@ module OmniAuth
         def validate(soft = true)
           validate_response_state(soft) &&
           validate_conditions(soft)     &&
-          document.validate(get_fingerprint, soft, get_cert, get_inclusive_namespaces)
+          document.validate(get_fingerprint, soft, get_cert)
         end
 
         def validate_response_state(soft = true)
@@ -110,10 +110,6 @@ module OmniAuth
 
         def get_cert
           settings.idp_cert
-        end
-
-        def get_inclusive_namespaces
-          settings.inclusive_namespaces_for_signed_info_canonicalization
         end
 
         def validate_conditions(soft = true)

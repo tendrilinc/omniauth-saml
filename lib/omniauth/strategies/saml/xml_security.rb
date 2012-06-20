@@ -36,6 +36,19 @@ module OmniAuth
         class SignedDocument < Nokogiri::XML::Document
           DSIG = "http://www.w3.org/2000/09/xmldsig#"
           EC   = "http://www.w3.org/2001/10/xml-exc-c14n#"
+          CANONICALIZATION_METHODS =
+          {
+            'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'       => Nokogiri::XML::XML_C14N_1_0,
+            'http://www.w3.org/TR/xml-c14n'                         => Nokogiri::XML::XML_C14N_1_0,
+            'http://www.w3.org/TR/2001/PR-xml-c14n-20010119'        => Nokogiri::XML::XML_C14N_1_0,
+            'http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/'  => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
+            'http://www.w3.org/TR/xml-exc-c14n/'                    => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
+            'http://www.w3.org/TR/2002/PR-xml-exc-c14n-20020524/'   => Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0,
+            'http://www.w3.org/TR/2008/REC-xml-c14n11-20080502/'    => Nokogiri::XML::XML_C14N_1_1,
+            'http://www.w3.org/TR/xml-c14n11/'                      => Nokogiri::XML::XML_C14N_1_1,
+            'http://www.w3.org/TR/2008/PR-xml-c14n11-20080129/'     => Nokogiri::XML::XML_C14N_1_1,
+            'http://www.w3.org/2001/10/xml-exc-c14n#'               => Nokogiri::XML::XML_C14N_1_1
+          }
 
           attr_accessor :signed_element_id
 
@@ -43,7 +56,7 @@ module OmniAuth
             extract_signed_element_id
           end
 
-          def validate(idp_cert_fingerprint, soft = true, idp_cert = nil, inclusive_namespaces_for_signed_info_canonicalization = nil)
+          def validate(idp_cert_fingerprint, soft = true, idp_cert = nil)
             if idp_cert
               # Use certificate provided in settings
               cert_text = idp_cert.gsub(/^ +/, '')
@@ -62,10 +75,10 @@ module OmniAuth
               SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
-            validate_doc(cert, soft, inclusive_namespaces_for_signed_info_canonicalization)
+            validate_doc(cert, soft)
           end
 
-          def validate_doc(cert, soft = true, inclusive_namespaces_for_signed_info_canonicalization = nil)
+          def validate_doc(cert, soft = true)
             # Check for inclusive namespaces
             inclusive_namespaces            = []
             inclusive_namespace_element     = self.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
@@ -76,7 +89,9 @@ module OmniAuth
 
             # Verify signature
             signed_info_element     = self.at_xpath(".//ds:SignedInfo", { "ds" => DSIG })
-            canon_string            = signed_info_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces_for_signed_info_canonicalization)
+            canon_method_uri        = signed_info_element.at_xpath(".//ds:CanonicalizationMethod", { "ds" => DSIG }).attribute("Algorithm").value
+            canon_method            = CANONICALIZATION_METHODS[canon_method_uri]
+            canon_string            = signed_info_element.canonicalize( canon_method )
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
             if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
@@ -115,6 +130,7 @@ module OmniAuth
             reference_element       = self.at_xpath("//ds:Signature/ds:SignedInfo/ds:Reference", { "ds" => DSIG })
             self.signed_element_id  = reference_element.attribute("URI").value unless reference_element.nil?
           end
+
         end
       end
 

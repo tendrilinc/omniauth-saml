@@ -28,7 +28,7 @@ end
 
 shared_examples_for 'a validating method' do |soft|
   before :each do
-    subject.settings = mock(Object, :idp_cert_fingerprint => 'FINGERPRINT', :idp_cert => nil, :inclusive_namespaces_for_signed_info_canonicalization => nil)
+    subject.settings = mock(Object, :idp_cert_fingerprint => 'FINGERPRINT', :idp_cert => nil)
     subject.document.stub(:validate).and_return(true)
   end
 
@@ -48,7 +48,7 @@ shared_examples_for 'a validating method' do |soft|
 
   context "when there is no idp_cert_fingerprint and idp_cert" do
     before :each do
-      subject.settings = mock(Object, :idp_cert_fingerprint => nil, :idp_cert => nil, :inclusive_namespaces_for_signed_info_canonicalization => nil)
+      subject.settings = mock(Object, :idp_cert_fingerprint => nil, :idp_cert => nil)
     end
 
     assert_is_not_valid(soft)
@@ -95,7 +95,7 @@ shared_examples_for 'a validating method' do |soft|
 
   context "when the SAML document is valid" do
     before :each do
-      subject.document.should_receive(:validate).with('FINGERPRINT', soft, nil, nil).and_return(true)
+      subject.document.should_receive(:validate).with('FINGERPRINT', soft, nil).and_return(true)
       subject.options[:skip_conditions] = true
     end
 
@@ -111,7 +111,7 @@ shared_examples_for 'a validating method' do |soft|
 
     before :each do
       subject.settings.stub(:idp_cert).and_return(cert)
-      subject.document.should_receive(:validate).with(expected, soft, cert, nil).and_return(true)
+      subject.document.should_receive(:validate).with(expected, soft, cert).and_return(true)
       subject.options[:skip_conditions] = true
     end
 
