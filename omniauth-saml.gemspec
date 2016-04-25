@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.homepage      = "https://github.com/PracticallyGreen/omniauth-saml"
 
   gem.add_runtime_dependency 'omniauth', '~> 1.1'
-  gem.add_runtime_dependency 'nokogiri', '~> 1.5.2'
+  gem.add_runtime_dependency 'nokogiri'
   gem.add_runtime_dependency 'uuid', '~> 2.3'
 
   gem.add_development_dependency 'guard', '1.0.1'
