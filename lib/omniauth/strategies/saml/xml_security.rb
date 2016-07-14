@@ -49,7 +49,7 @@ module OmniAuth
             extract_signed_element_id
           end
 
-          def validate(idp_cert_fingerprint, soft = true, idp_cert = nil)
+          def validate(idp_cert_fingerprint, settings, soft = true, idp_cert = nil)
             if idp_cert
               # Use certificate provided in settings
               cert_text = idp_cert.gsub(/^ +/, '')
@@ -68,10 +68,10 @@ module OmniAuth
               SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
-            validate_doc(cert, soft)
+            validate_doc(cert, settings, soft)
           end
 
-          def validate_doc(cert, soft = true)
+          def validate_doc(cert, settings, soft = true)
             # Check for inclusive namespaces
             inclusive_namespaces            = []
             inclusive_namespace_element     = self.at_xpath(".//ec:InclusiveNamespaces", { "ec" => EC })
@@ -87,29 +87,36 @@ module OmniAuth
             canon_string            = signed_info_element.canonicalize( canon_method )
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
-            if !cert.public_key.verify(OpenSSL::Digest::SHA1.new, signature, canon_string)
+            if !cert.public_key.verify(digest_for_algorithm(settings.idp_digest_algorithm).new, signature, canon_string)
               SAML::log :error, "Key Validation Error."
+              SAML::log :error, "  settings: " + settings.inspect
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
             end
 
             # Remove Signature Node (must be done after signature verification)
-            sig_element = self.at_xpath(".//ds:Signature", { "ds" => DSIG })
+            sig_element = self.at_xpath(".//ds:Signature", {"ds" => DSIG})
             sig_element.remove
 
             # Check Digests (must be done after sig_element removal)
-            sig_element.xpath(".//ds:Reference", { "ds" => DSIG }).each do |ref|
-              uri                     = ref.attributes["URI"].value
+            sig_element.xpath(".//ds:Reference", {"ds" => DSIG}).each do |ref|
+              uri = ref.attributes["URI"].value
               unless uri.nil? || uri.empty?
                 hashed_element = self.at_xpath(".//*[@ID='#{uri[1..-1]}']")
               else
-                hashed_element = self.at_xpath(".//samlp:Response")
+                if settings.idp_attribute_xpath
+                  hashed_element = self.at_xpath(settings.idp_attribute_xpath)
+                else
+                  hashed_element = self.at_xpath(".//samlp:Response")
+                end
               end
-              canon_hashed_element    = hashed_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
-              hash                    = Base64.encode64(Digest::SHA1.digest(canon_hashed_element)).chomp
-              digest_value            = ref.at_xpath(".//ds:DigestValue", { "ds" => DSIG }).text
+              canon_hashed_element = hashed_element.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
+
+              hash = Base64.encode64(digest_for_algorithm(settings.idp_digest_algorithm).digest(canon_hashed_element)).chomp.gsub(/[[:space:]]+/, ' ').strip
+              digest_value = ref.at_xpath(".//ds:DigestValue", {"ds" => DSIG}).text.gsub(/[[:space:]]+/, ' ').strip
 
               if hash != digest_value
-                SAML::log :error, "Digest Mismatch."
+                SAML::log :error, "Digest Mismatch. hash=" + hash + " digest value: " + digest_value
+                SAML::log :error, "  settings: " + settings.inspect
                 return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Digest mismatch"))
               end
             end
@@ -122,6 +129,17 @@ module OmniAuth
           def extract_signed_element_id
             reference_element       = self.at_xpath("//ds:Signature/ds:SignedInfo/ds:Reference", { "ds" => DSIG })
             self.signed_element_id  = reference_element.attribute("URI").value unless reference_element.nil?
+          end
+
+          def digest_for_algorithm(algorithm)
+            case algorithm
+              when 'SHA256'
+                OpenSSL::Digest::SHA256
+              when 'SHA512'
+                OpenSSL::Digest::SHA512
+              else
+                OpenSSL::Digest::SHA1
+            end
           end
 
         end

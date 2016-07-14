@@ -77,7 +77,7 @@ module OmniAuth
         def validate(soft = true)
           validate_response_state(soft) &&
           validate_conditions(soft)     &&
-          document.validate(get_fingerprint, soft, get_cert)
+          document.validate(get_fingerprint, settings, soft, get_cert)
         end
 
         def validate_response_state(soft = true)
