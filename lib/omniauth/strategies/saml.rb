@@ -56,6 +56,12 @@ module OmniAuth
         if options[:use_post_binding]
           r = Rack::Response.new
           saml_request = Rack::Utils.parse_query(URI.parse(uri).query).fetch('SAMLRequest')
+          puts "********************************************"
+          puts "           SAMLRequest from redirect"
+          puts saml_request
+          puts "********************************************"
+
+
           content = <<-CONTENT.gsub(/\s+/, ' ').strip
             <form method="post" action="#{options[:idp_sso_target_url]}">
                <input type="hidden" name="SAMLRequest" value="#{saml_request}" />
