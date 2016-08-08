@@ -27,11 +27,16 @@ module OmniAuth
 
           request << "</samlp:AuthnRequest>"
 
+          puts "********************************************"
+          puts "           SAMLRequest from AuthRequest"
+          puts request
+          puts "********************************************"
+
           if settings[:use_post_binding]
             base64_request    = Base64.encode64(request)
           else
             deflated_request  = Zlib::Deflate.deflate(request, 9)[2..-5]
-            base64_request    = Base64.encode64(deflated_request)            
+            base64_request    = Base64.encode64(deflated_request)
           end
 
           encoded_request   = CGI.escape(base64_request)
