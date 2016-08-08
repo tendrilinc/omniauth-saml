@@ -27,10 +27,10 @@ module OmniAuth
 
           request << "</samlp:AuthnRequest>"
 
-          puts "********************************************"
-          puts "           SAMLRequest from AuthRequest"
-          puts request
-          puts "********************************************"
+          OmniAuth.logger.send :info, "********************************************"
+          OmniAuth.logger.send :info, "           SAMLRequest from AuthRequest"
+          OmniAuth.logger.send :info, request
+          OmniAuth.logger.send :info, "********************************************"
 
           if settings[:use_post_binding]
             base64_request    = Base64.encode64(request)
@@ -45,6 +45,11 @@ module OmniAuth
           params.each_pair do |key, value|
             request_params << "&#{key}=#{CGI.escape(value.to_s)}"
           end
+
+          OmniAuth.logger.send :info, "********************************************"
+          OmniAuth.logger.send :info, "           request_params from AuthRequest"
+          OmniAuth.logger.send :info, request_params
+          OmniAuth.logger.send :info, "********************************************"
 
           settings[:idp_sso_target_url] + request_params
         end
