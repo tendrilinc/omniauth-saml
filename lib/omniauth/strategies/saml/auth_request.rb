@@ -25,6 +25,23 @@ module OmniAuth
             request << "</samlp:RequestedAuthnContext>"
           end
 
+          if settings[:sign_requests].present?
+            response << "<ds:Signature xmlns:ds='http://www.w3.org/2000/09/xmldsig#'><ds:SignedInfo><ds:CanonicalizationMethod Algorithm='http://www.w3.org/2001/10/xml-exc-c14n#'/><ds:SignatureMethod Algorithm='http://www.w3.org/2000/09/xmldsig#rsa-sha1'/><ds:Reference URI='#_3738a24e8520a7ff251ef510cf23abbf52eec789'><ds:Transforms><ds:Transform Algorithm='http://www.w3.org/2000/09/xmldsig#enveloped-signature'/><ds:Transform Algorithm='http://www.w3.org/2001/10/xml-exc-c14n#'><ec:InclusiveNamespaces PrefixList='xs' xmlns:ec='http://www.w3.org/2001/10/xml-exc-c14n#'/></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm='http://www.w3.org/2000/09/xmldsig#sha1'/><ds:DigestValue>FW/z+bZ+zJMK77OJW5tHn/b9UwI=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>bwD8w3Pv4KkKQQx5/IIVI0pmitgEdU5GMVyu8U8AKy7+TSMr2mOUQxwfVg3qZgS3+np4zFRF4MuTgdUNCfkOca2/V6CqyOfSyS7bxjM78ZRHNitB7KIT4b1i/3GSK8vWmoA2rl7T81QORnHZg/KZn3O8y4kpwJzpRiYZicnSU3VgItZA9zxchOtfZ/IP7/KcLj/hRKNdBkkQWI32iYUEnrCs3WG0wNJns4iKrlAtpyfa0IueWY+o5D1dRpBv89Cpn9F+eLAOJ28DkH5DbA8qTvO7dvsiK3og8i6bYVuAVNQdeLpvBgVbpAv+LFKkq4PChGQEQF/NkU8WMnoaJUxFTA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIC7TCCAdUCBgFVDdhuVDANBgkqhkiG9w0BAQUFADA6MRQwEgYDVQQDDAtUaGlua0VuZXJneTEU
+              MBIGA1UECgwLVGhpbmtFbmVyZ3kxDDAKBgNVBAYTA1VTQTAeFw0xNjA2MDEyMTIyMTVaFw0xODEx
+              MTgyMTIyMTVaMDoxFDASBgNVBAMMC1RoaW5rRW5lcmd5MRQwEgYDVQQKDAtUaGlua0VuZXJneTEM
+              MAoGA1UEBhMDVVNBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgk/U0dIwOSCHptZr
+              UTLKQ2aBSkd6ZGRgwaHg/m0c1VkGf6zcPt2gt8L8rkwk6sY8hys80QoLJEup7vsOVIYHbTbdpwBe
+              4b06BWl3OPhSHhyEtlpjJDe8eBEP0tSOfruemV8RBP9EGU6gQzyBN/A7SFtUwfk5n01/8tfKp5Uj
+              CWl50M/RyyEmOp3pxoHyY2FXhX+OKmm2q5O2TgK5fdQU+dPQdmQznkGeu4/cVLJUE8/hFSDa9R6m
+              gnUBs4D4avxpSwMTSaIkQPyi3CSHwsL8Wkeb4A0wEgmma+8Xlyf9ZMYbFZLG0+Hl0xWxsF0MP8I7
+              9qkZhaGXJZtdjzWS0DeyVwIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQAlrXLQQBxOZAEar5idaCYG
+              8CpjG8qQx2bdH3bTWZBF3/xezsF7pQ4+i3+9VRNBUI6XqOsJg3DJC+6TgY1HLF7DyR3XMNWPwdAs
+              cm0KwiyQgOxYpg+Dt46ooZ57QrBAxfbhxAu2bqVTHgr182xC4Fsmqrr9QJ2azTEPWQoQ34lJ41X2
+              TMvsCD+1ZABy145zRVBjiJcmOrp3sNvWnt5kMJVZ/vjRM1l8EnFP3hiI+cu8vGB45jHBrl87rBGu
+              znt5mEUQcPrVKgOlnv3O2GmiK9V3ZK4l0xLecyLKhNo39sIibwBsU5RUqy9wU0Q1vesbxgE5Wnu1
+              rNY993OpgsGxGtUA</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature>"
+          end
+
           request << "</samlp:AuthnRequest>"
 
           OmniAuth.logger.send :info, "********************************************"
