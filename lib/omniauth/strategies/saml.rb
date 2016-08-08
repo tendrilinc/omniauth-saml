@@ -55,7 +55,8 @@ module OmniAuth
       def redirect(uri)
         if options[:use_post_binding]
           r = Rack::Response.new
-          log :debug, "******* REDIRECT *******"
+          log :debug, "******* REDIRECT URI *******"
+          log :debug, uri
           saml_request = Rack::Utils.parse_query(URI.parse(uri).query).fetch('SAMLRequest')
           log :debug, "********************************************"
           log :debug, "           SAMLRequest from redirect"
