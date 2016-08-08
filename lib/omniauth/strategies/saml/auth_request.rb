@@ -14,9 +14,10 @@ module OmniAuth
 
           request =
             "<samlp:AuthnRequest #{'ForceAuthn="true"' if settings[:force_auth]} xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" ID=\"#{uuid}\" Version=\"2.0\" IssueInstant=\"#{time}\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" AssertionConsumerServiceURL=\"#{settings[:assertion_consumer_service_url]}\">" +
-            "<saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">#{settings[:issuer]}</saml:Issuer>\n" +
+            "<saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">#{settings[:issuer]}</saml:Issuer>\n"
+
             if settings[:sign_requests].present?
-              response << "
+              request << "
                 <ds:Signature xmlns:ds='http://www.w3.org/2000/09/xmldsig#'>
                   <ds:SignedInfo>
                     <ds:CanonicalizationMethod Algorithm='http://www.w3.org/2001/10/xml-exc-c14n#'/>
@@ -40,7 +41,8 @@ module OmniAuth
                   </ds:KeyInfo>
                 </ds:Signature>"
             end
-            "<samlp:NameIDPolicy xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Format=\"#{settings[:name_identifier_format]}\" AllowCreate=\"true\"></samlp:NameIDPolicy>\n"
+
+            request << "<samlp:NameIDPolicy xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Format=\"#{settings[:name_identifier_format]}\" AllowCreate=\"true\"></samlp:NameIDPolicy>\n"
 
           if settings[:requested_authn_context]
             request << "<samlp:RequestedAuthnContext xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" Comparison=\"exact\">"
