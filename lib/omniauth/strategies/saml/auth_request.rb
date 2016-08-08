@@ -35,7 +35,9 @@ module OmniAuth
           end
 
           encoded_request   = CGI.escape(base64_request)
-          request_params    = "?SAMLRequest=" + encoded_request
+
+          delimiter = settings[:idp_sso_target_url].include?('?') ? '&' : '?'
+          request_params = "#{delimiter}SAMLRequest=#{encoded_request}"
 
           params.each_pair do |key, value|
             request_params << "&#{key}=#{CGI.escape(value.to_s)}"
