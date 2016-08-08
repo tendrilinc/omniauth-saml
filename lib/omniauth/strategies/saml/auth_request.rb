@@ -16,9 +16,9 @@ module OmniAuth
             "<samlp:AuthnRequest #{'ForceAuthn="true"' if settings[:force_auth]} xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" ID=\"#{uuid}\" Version=\"2.0\" IssueInstant=\"#{time}\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" AssertionConsumerServiceURL=\"#{settings[:assertion_consumer_service_url]}\">" +
             "<saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">#{settings[:issuer]}</saml:Issuer>\n"
 
-            Omniauth.logger.send :info, "********** Should Sign: #{settings[:sign_requests]} ************"
+            OmniAuth.logger.send :info, "********** Should Sign: #{settings[:sign_requests]} ************"
             if settings[:sign_requests].present?
-              Omniauth.logger.send :info, '********** SIGNING REQUEST ************'
+              OmniAuth.logger.send :info, '********** SIGNING REQUEST ************'
               request << "
                 <ds:Signature xmlns:ds='http://www.w3.org/2000/09/xmldsig#'>
                   <ds:SignedInfo>
