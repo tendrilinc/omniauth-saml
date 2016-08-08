@@ -16,6 +16,7 @@ module OmniAuth
 
       def request_phase
         request = OmniAuth::Strategies::SAML::AuthRequest.new
+        log :debug, "******* #{options.inspect} *********"
         redirect(request.create(options))
       end
 
