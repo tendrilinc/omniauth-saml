@@ -55,11 +55,12 @@ module OmniAuth
       def redirect(uri)
         if options[:use_post_binding]
           r = Rack::Response.new
+          log :debug, "******* REDIRECT *******"
           saml_request = Rack::Utils.parse_query(URI.parse(uri).query).fetch('SAMLRequest')
-          puts "********************************************"
-          puts "           SAMLRequest from redirect"
-          puts saml_request
-          puts "********************************************"
+          log :debug, "********************************************"
+          log :debug, "           SAMLRequest from redirect"
+          log :debug, saml_request
+          log :debug, "********************************************"
 
 
           content = <<-CONTENT.gsub(/\s+/, ' ').strip
