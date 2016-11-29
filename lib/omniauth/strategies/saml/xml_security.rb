@@ -89,6 +89,7 @@ module OmniAuth
             signature               = Base64.decode64(base64_signature)
             if !cert.public_key.verify(digest_for_algorithm(settings.idp_digest_algorithm).new, signature, canon_string)
               SAML::log :error, "Key Validation Error."
+              SAML::log :error, digest_for_algorithm(settings.idp_digest_algorithm).new, signature, canon_string
               SAML::log :error, "  settings: " + settings.inspect
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
             end
