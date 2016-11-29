@@ -24,8 +24,6 @@ module OmniAuth
           response = OmniAuth::Strategies::SAML::AuthResponse.new(request.params['SAMLResponse'])
           response.settings = options
 
-          SAML::log response.inspect
-
           @name_id  = response.name_id
           @attributes = response.attributes
 
