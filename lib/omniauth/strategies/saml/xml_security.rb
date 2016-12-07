@@ -50,18 +50,23 @@ module OmniAuth
           end
 
           def validate(idp_cert_fingerprint, settings, soft = true, idp_cert = nil)
+            SAML::log :error, "====idp_cert======="
+            SAML::log :error, idp_cert
+            SAML::log :error, "==================="
             if idp_cert
               # Use certificate provided in settings
               cert_text = idp_cert.gsub(/^ +/, '')
               base64_cert = Base64.encode64(cert_text)
+              SAML::log :error, "======conf cert============="
             else
               # Get certificate from response
               base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
               cert_text = Base64.decode64(base64_cert)
+              SAML::log :error, "======resp cert============="
             end
-            SAML::log :error, "==========================="
-            SAML::log :error, "cert_text: " + cert_text
-            SAML::log :error, "==========================="
+            SAML::log :error, "====cert_text======"
+            SAML::log :error, cert_text
+            SAML::log :error, "==================="
             cert = OpenSSL::X509::Certificate.new(cert_text)
 
             # Check certificate matches registered IdP certificate
@@ -71,9 +76,9 @@ module OmniAuth
               SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
-            SAML::log :error, "==========================="
-            SAML::log :error, "finger print: " + fingerprint
-            SAML::log :error, "==========================="
+            SAML::log :error, "====finger print=========="
+            SAML::log :error, fingerprint
+            SAML::log :error, "=========================="
             validate_doc(cert, settings, soft)
           end
 
