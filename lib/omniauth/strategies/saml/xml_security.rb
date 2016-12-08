@@ -63,6 +63,7 @@ module OmniAuth
               base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
               cert_text = Base64.decode64(base64_cert)
               SAML::log :error, "======resp cert============="
+              SAML::log :error, self.inspect
             end
             SAML::log :error, "====cert_text======"
             SAML::log :error, cert_text
