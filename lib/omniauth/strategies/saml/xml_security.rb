@@ -63,7 +63,6 @@ module OmniAuth
               base64_cert = self.at_xpath(".//ds:X509Certificate", { "ds" => DSIG }).text
               cert_text = Base64.decode64(base64_cert)
               SAML::log :error, "======resp cert============="
-              SAML::log :error, self.inspect
             end
             SAML::log :error, "====cert_text======"
             SAML::log :error, cert_text
@@ -77,9 +76,6 @@ module OmniAuth
               SAML::log :error, "Fingerprint Mismatch"
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Fingerprint mismatch"))
             end
-            SAML::log :error, "====finger print=========="
-            SAML::log :error, fingerprint
-            SAML::log :error, "=========================="
             validate_doc(cert, settings, soft)
           end
 
@@ -99,8 +95,11 @@ module OmniAuth
             canon_string            = signed_info_element.canonicalize( canon_method )
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
-            if !cert.public_key.verify(digest_for_algorithm(settings.idp_digest_algorithm).new, signature, canon_string)
+            if !cert.public_key.verify(digest_for_algorithm(SHA1).new, signature, canon_string)
+              SAML::log :error, "=========================="
               SAML::log :error, "Key Validation Error."
+              SAML::log :error, OpenSSL.errors.inspect
+              SAML::log :error, "=========================="
               SAML::log :error, "digest: " + digest_for_algorithm(settings.idp_digest_algorithm).new.inspect
               SAML::log :error, "signature: " + signature
               SAML::log :error, "cannon_string: " + canon_string
