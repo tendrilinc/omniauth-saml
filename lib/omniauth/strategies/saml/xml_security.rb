@@ -87,8 +87,11 @@ module OmniAuth
             canon_string            = signed_info_element.canonicalize( canon_method )
             base64_signature        = self.at_xpath(".//ds:SignatureValue", { "ds" => DSIG }).text
             signature               = Base64.decode64(base64_signature)
-            if !cert.public_key.verify(digest_for_algorithm(settings.idp_digest_algorithm).new, signature, canon_string)
+            if !cert.public_key.verify(digest_for_algorithm(settings.idp_signature_algorithm).new, signature, canon_string)
+              SAML::log :error, "=========================="
               SAML::log :error, "Key Validation Error."
+              SAML::log :error, OpenSSL.errors.inspect
+              SAML::log :error, "=========================="
               SAML::log :error, "  settings: " + settings.inspect
               return soft ? false : (raise OmniAuth::Strategies::SAML::ValidationError.new("Key validation error"))
             end
