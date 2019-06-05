@@ -1,6 +1,7 @@
 # OmniAuth SAML
+A tendril-specific flair on generic SAML strategy for OmniAuth. We made changes many moons ago and now we can't upgrade. 
 
-A generic SAML strategy for OmniAuth.
+Used here: https://github.com/tendrilinc/energize-fork/blob/80299ac7757e314c85bc6d45fd7e9ab2695b494a/Gemfile#L23
 
 https://github.com/PracticallyGreen/omniauth-saml
 
